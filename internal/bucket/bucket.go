@@ -25,6 +25,8 @@ func New(bt BucketType, cfg any) (b *Bucket, err error) {
 	default:
 		return nil, fmt.Errorf("type not implemented")
 	}
+
+	return
 }
 
 type BucketInterface interface {
