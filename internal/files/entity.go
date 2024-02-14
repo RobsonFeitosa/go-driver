@@ -17,11 +17,11 @@ var (
 
 type File struct {
 	ID         int64     `json:"id"`
-	FolderId   int64     `json:"folder_id"`
-	OwnerId    int64     `json:"owner_id"`
+	FolderID   int64     `json:"-"`
+	OwnerID    int64     `json:"owner_id"`
 	Name       string    `json:"name"`
 	Type       string    `json:"type"`
-	Path       string    `json:"path"`
+	Path       string    `json:"-"`
 	CreatedAt  time.Time `json:"created_at"`
 	ModifiedAt time.Time `json:"modified_at"`
 	Deleted    bool      `json:"-"`
@@ -29,7 +29,7 @@ type File struct {
 
 func (f *File) Validate() error {
 
-	if f.OwnerId == 0 {
+	if f.OwnerID == 0 {
 		return ErrOwnerRequire
 	}
 
