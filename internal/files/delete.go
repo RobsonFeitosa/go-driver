@@ -17,23 +17,46 @@ func (h *handler) Delete(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = deleteFiles(h.db, int64(id))
+
 	err = Delete(h.db, int64(id))
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	f, err := files.List(h.db, int64(id))
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	for _, file := range f {
-		file.Deleted = true
-	}
+	// TODO: list folders
 
 	rw.Header().Add("Content-Type", "application/json")
+}
+
+func deleteFiles(db *sql.DB, folderID int64) error {
+	f, err := files.List(db, int64(folderID))
+	if err != nil {
+		return err
+	}
+
+	removedFiles := make([]files.File, 0, len(f))
+	for _, file := range f {
+		file.Deleted = true
+		err := files.Update(db, file.ID, &file)
+		if err != nil {
+			break
+		}
+
+		removedFiles = append(removedFiles, file.ID)
+	}
+
+	if len(f) != len(removedFiles) {
+		for _, file := range removedFiles {
+			file.Deleted = false
+			files.Update(db, file.ID, &file)
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func Delete(db *sql.DB, id int64) error {
