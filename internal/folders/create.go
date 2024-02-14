@@ -1,4 +1,4 @@
-package users
+package folders
 
 import (
 	"database/sql"
@@ -7,38 +7,36 @@ import (
 )
 
 func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
-	u := new(User)
+	f := new(Folder)
 
-	err := json.NewDecoder(r.Body).Decode(u)
+	err := json.NewDecoder(r.Body).Decode(f)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	u.SetPassword((u.Password))
-
-	err = u.Validate()
+	err = f.Validate()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	id, err := Insert(h.db, u)
+	id, err := Insert(h.db, f)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	u.ID = id
+	f.ID = id
 
 	rw.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(u)
+	json.NewEncoder(rw).Encode(f)
 }
 
-func Insert(db *sql.DB, u *User) (int64, error) {
-	stmt := `INSERT INTO "users" ("name", "login", "password", "modified_at") VALUES ($1, $2, $3, $4)`
+func Insert(db *sql.DB, f *Folder) (int64, error) {
+	stmt := `INSERT INTO "folders" ("parent_id", "name", "modified_at") VALUES ($1, $2, $3)`
 
-	result, err := db.Exec(stmt, u.Name, u.Login, u.Password, u.ModifiedAt)
+	result, err := db.Exec(stmt, f.Name, f.Name, f.ModifiedAt)
 	if err != nil {
 		return -1, err
 	}
