@@ -1,4 +1,4 @@
-package files
+package folders
 
 import (
 	"database/sql"
@@ -17,7 +17,11 @@ func (h *handler) Delete(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = deleteFiles(h.db, int64(id))
+	err = deleteFolderContent(h.db, int64(id))
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	err = Delete(h.db, int64(id))
 	if err != nil {
@@ -30,6 +34,47 @@ func (h *handler) Delete(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Add("Content-Type", "application/json")
 }
 
+func deleteFolderContent(db *sql.DB, folderID int64) error {
+	err := deleteFiles(db, int64(folderID))
+	if err != nil {
+		return err
+	}
+
+	err = deleteSubfolders(h.db, int64(id))
+}
+
+func deleteSubfolders(db *sql.DB, folderID int64) error {
+
+	subfolders, err := getSubFolder(db, folderID)
+	if err != nil {
+		return err
+	}
+
+	removedFolders := make([]Folder, 0, len(subfolders))
+	for _, sf := range subfolders {
+		err := Delete(db, sf.ID)
+		if err != nil {
+			break
+		}
+
+		err = deleteSubfolders(db, sf.ID)
+		if err != nil {
+			Update(db, &sf, sf.ID)
+			break
+		}
+
+		removedFolders = append(removedFolders, sf)
+	}
+
+	if len(subfolders) != len(removedFolders) {
+		for _, rf := range removedFolders {
+			Update(db, &rf, rf.ID)
+		}
+	}
+
+	return nil
+}
+
 func deleteFiles(db *sql.DB, folderID int64) error {
 	f, err := files.List(db, int64(folderID))
 	if err != nil {
@@ -39,18 +84,18 @@ func deleteFiles(db *sql.DB, folderID int64) error {
 	removedFiles := make([]files.File, 0, len(f))
 	for _, file := range f {
 		file.Deleted = true
-		err := files.Update(db, file.ID, &file)
+		err := files.Update(db, &file, file.ID)
 		if err != nil {
 			break
 		}
 
-		removedFiles = append(removedFiles, file.ID)
+		removedFiles = append(removedFiles, file)
 	}
 
 	if len(f) != len(removedFiles) {
 		for _, file := range removedFiles {
 			file.Deleted = false
-			files.Update(db, file.ID, &file)
+			files.Update(db, &file, file.ID)
 		}
 
 		return err

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/lib/pg"
+	_ "github.com/lib/pq"
 )
 
 func NewConnection() (*sql.DB, error) {
