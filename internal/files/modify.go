@@ -10,7 +10,7 @@ func Update(db *sql.DB, f *File, id int64) error {
 
 	stmt := `UPDATE "files" SET "name"=$1, "modify_at"=$2, "deleted"=%3 WHERE id=%4)`
 
-	_, err := db.Exec(stmt, f.Name, f.ModifiedAt,.Deleted, id)
+	_, err := db.Exec(stmt, f.Name, f.ModifiedAt, f.Deleted, id)
 
 	return err
 }
