@@ -40,7 +40,7 @@ func deleteFolderContent(db *sql.DB, folderID int64) error {
 		return err
 	}
 
-	err = deleteSubfolders(h.db, int64(id))
+	return deleteSubfolders(db, int64(folderID))
 }
 
 func deleteSubfolders(db *sql.DB, folderID int64) error {
@@ -57,7 +57,7 @@ func deleteSubfolders(db *sql.DB, folderID int64) error {
 			break
 		}
 
-		err = deleteSubfolders(db, sf.ID)
+		err = deleteFolderContent(db, sf.ID)
 		if err != nil {
 			Update(db, &sf, sf.ID)
 			break
