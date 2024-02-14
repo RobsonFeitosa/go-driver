@@ -7,7 +7,7 @@ func Get(db *sql.DB, id int64) (*File, error) {
 	row := db.QueryRow(stmt, id)
 
 	var f File
-	err := row.Scan(&f.ID, &f.FolderID, &f.OwnerID, &f.Type, &f.Path, &f.CreatedAt, &f.ModifiedAt, &f.Deleted)
+	err := row.Scan(&f.ID, &f.FolderID, &f.OwnerID, &f.Name, &f.Type, &f.Path, &f.CreatedAt, &f.ModifiedAt, &f.Deleted)
 	if err != nil {
 		return nil, err
 	}
