@@ -2,9 +2,12 @@ package files
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/RobsonFeitosa/go-driver/internal/queue"
 )
 
 func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
@@ -49,6 +52,28 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	entity.ID = id
+
+	dto := queue.QueueDto{
+		Filename: fileHeader.Filename,
+		Path:     path,
+		ID:       int(id),
+	}
+
+	msg, err := dto.Marshal()
+	if err != nil {
+		//TODO: rollback
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = h.queue.Publish(msg)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rw.Header().Add("Content-type", "application/json")
+	json.NewEncoder(rw).Encode(entity)
 }
 
 func Insert(db *sql.DB, f *File) (int64, error) {
