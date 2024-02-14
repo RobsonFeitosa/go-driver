@@ -32,7 +32,7 @@ func Get(db *sql.DB, id int64) (*User, error) {
 	row := db.QueryRow(stmt, id)
 
 	var u User
-	err := row.Scan(&u.ID, &u.Login, &u.Password, &u.CreatedAt, &u.ModifiedAt, &u.Deleted, &u.LastLogin)
+	err := row.Scan(&u.ID, &u.Name, &u.Login, &u.Password, &u.CreatedAt, &u.ModifiedAt, &u.Deleted, &u.LastLogin)
 	if err != nil {
 		return nil, err
 	}
