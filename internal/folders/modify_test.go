@@ -7,31 +7,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
-	"testing"
-	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestModify(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
-
-	h := handler{db}
-
-	f := Folder{
-		Name: "Fotos",
-	}
-
+func (ts *TransactionSuite) TestModify() {
 	var b bytes.Buffer
-	err = json.NewEncoder(&b).Encode(&f)
-	if err != nil {
-		t.Error(err)
-	}
+	err := json.NewEncoder(&b).Encode(&ts.entity)
+	assert.NoError(ts.T(), err)
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPut, "/{id}", &b)
@@ -41,47 +26,22 @@ func TestModify(t *testing.T) {
 
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 
+	setMockUpdateFolder(ts.mock)
+	setMockGetFolder(ts.mock)
+
+	ts.handler.Modify(rr, req)
+	assert.Equal(ts.T(), http.StatusOK, rr.Code)
+}
+
+func (ts *TransactionSuite) TestUpdate() {
+	setMockUpdateFolder(ts.mock)
+
+	err := Update(ts.conn, &Folder{Name: "Fotos"}, 1)
+	assert.NoError(ts.T(), err)
+}
+
+func setMockUpdateFolder(mock sqlmock.Sqlmock) {
 	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "folders" SET "name"=$1, "modified_at"=%2 WHERE id=%3`)).
 		WithArgs("Fotos", AnyTime{}, 1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	rows := sqlmock.NewRows([]string{"id", "parent_id", "name", "created_at", "modified_at", "deleted"}).
-		AddRow(1, 2, "Fotos", time.Now(), time.Now(), false)
-
-	mock.ExpectQuery(regexp.QuoteMeta(`select * from "folders" where id=$1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
-
-	h.Modify(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("Error: %v", rr)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestUpdate(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
-
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "folders" SET "name"=$1, "modified_at"=%2 WHERE id=%3`)).
-		WithArgs("Robson", AnyTime{}, 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	err = Update(db, &Folder{Name: "Robson"}, 1)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
 }

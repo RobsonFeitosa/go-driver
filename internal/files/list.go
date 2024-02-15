@@ -9,7 +9,7 @@ func List(db *sql.DB, folderID int64) ([]File, error) {
 }
 
 func ListRoot(db *sql.DB) ([]File, error) {
-	stmt := `SELECT * FROM "files" WHERE  "folder_id" is null and "deleted"=false`
+	stmt := `SELECT * FROM "files" WHERE "folder_id" is null and "deleted"=false`
 
 	return selectAllFiles(db, stmt)
 }
