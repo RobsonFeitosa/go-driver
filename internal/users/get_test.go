@@ -10,7 +10,6 @@ import (
 )
 
 func (ts *TransactionSuite) TestGetByID() {
-	h := handler{ts.conn}
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/{id}", nil)
@@ -22,7 +21,7 @@ func (ts *TransactionSuite) TestGetByID() {
 
 	setMockGet(ts.mock, ts.entity)
 
-	h.GetByID(rr, req)
+	ts.handler.GetByID(rr, req)
 
 	assert.Equal(ts.T(), http.StatusOK, rr.Code)
 }

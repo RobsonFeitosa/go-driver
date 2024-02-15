@@ -17,21 +17,6 @@ var (
 	ErrPasswordLength = errors.New("Password must have at least 6 characters")
 )
 
-func New(name, login, password string) (*User, error) {
-	u := User{Name: name, Login: login, ModifiedAt: time.Now()}
-	err := u.SetPassword(password)
-	if err != nil {
-		return nil, err
-	}
-
-	err = u.Validate()
-	if err != nil {
-		return nil, err
-	}
-
-	return &u, nil
-}
-
 type User struct {
 	ID         int64     `json:"id"`
 	Name       string    `json:"name"`
