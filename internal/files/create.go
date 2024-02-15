@@ -27,9 +27,10 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entity, err := New(1, fileHeader.Filename, fileHeader.Header.Get("Conent-Type"), path)
+	entity, err := New(1, fileHeader.Filename, fileHeader.Header.Get("Content-Type"), path)
 	if err != nil {
 		h.bucket.Delete(path)
+
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -72,7 +73,8 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rw.Header().Add("Content-type", "application/json")
+	rw.WriteHeader(http.StatusCreated)
+	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(entity)
 }
 
