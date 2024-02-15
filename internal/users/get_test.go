@@ -4,22 +4,13 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
-	"testing"
-	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestGetByID(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
-
-	h := handler{db}
+func (ts *TransactionSuite) TestGetByID() {
+	h := handler{ts.conn}
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/{id}", nil)
@@ -29,46 +20,16 @@ func TestGetByID(t *testing.T) {
 
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Robson", "robson.gw@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now())
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id=$1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
+	setMockGet(ts.mock, ts.entity)
 
 	h.GetByID(rr, req)
 
-	if rr.Code != http.StatusOK {
-		t.Errorf("Error: %v", rr)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(ts.T(), http.StatusOK, rr.Code)
 }
 
-func TestGet(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestGet() {
+	setMockGet(ts.mock, ts.entity)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Robson", "robson.gw@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now())
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id=$1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
-
-	_, err = Get(db, 1)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	_, err := Get(ts.conn, 1)
+	assert.NoError(ts.T(), err)
 }

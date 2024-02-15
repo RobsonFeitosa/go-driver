@@ -6,33 +6,20 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
-	"testing"
-	"time"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestModify(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
-
-	h := handler{db}
-
+func (ts *TransactionSuite) TestModify() {
 	u := User{
 		ID:   1,
 		Name: "Robson",
 	}
 
 	var b bytes.Buffer
-	err = json.NewEncoder(&b).Encode(&u)
-	if err != nil {
-		t.Error(err)
-	}
+	err := json.NewEncoder(&b).Encode(&u)
+	assert.NoError(ts.T(), err)
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPut, "/{id}", &b)
@@ -42,47 +29,17 @@ func TestModify(t *testing.T) {
 
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "name"=$1, "modified_at"=%2 WHERE id=%3)`)).
-		WithArgs("Robson", AnyTime{}, 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	setMockUpdate(ts.mock, ts.entity)
+	setMockGet(ts.mock, ts.entity)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Robson", "robson.gw@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now())
+	ts.handler.Modify(rr, req)
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id=$1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
-
-	h.Modify(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Errorf("Error: %v", rr)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(ts.T(), http.StatusOK, rr.Code)
 }
 
-func TestUpdate(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Error(err)
-	}
-	defer db.Close()
+func (ts *TransactionSuite) TestUpdate() {
+	setMockUpdate(ts.mock, ts.entity)
 
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "name"=$1, "modified_at"=%2 WHERE id=%3)`)).
-		WithArgs("Robson", AnyTime{}, 1).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	err = Update(db, 1, &User{Name: "Robson"})
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = mock.ExpectationsWereMet()
-	if err != nil {
-		t.Error(err)
-	}
+	err := Update(ts.conn, 1, &User{Name: "Robson"})
+	assert.NoError(ts.T(), err)
 }
