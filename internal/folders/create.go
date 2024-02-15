@@ -29,6 +29,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 
 	f.ID = id
 
+	rw.WriteHeader(http.StatusCreated)
 	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(f)
 }
@@ -36,7 +37,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 func Insert(db *sql.DB, f *Folder) (int64, error) {
 	stmt := `INSERT INTO "folders" ("parent_id", "name", "modified_at") VALUES ($1, $2, $3)`
 
-	result, err := db.Exec(stmt, f.Name, f.Name, f.ModifiedAt)
+	result, err := db.Exec(stmt, f.ParentId, f.Name, f.ModifiedAt)
 	if err != nil {
 		return -1, err
 	}
