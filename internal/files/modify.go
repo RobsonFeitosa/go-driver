@@ -29,7 +29,11 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = file.Validate()
+	if file.Name == "" {
+		http.Error(rw, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
@@ -48,7 +52,7 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 func Update(db *sql.DB, f *File, id int64) error {
 	f.ModifiedAt = time.Now()
 
-	stmt := `UPDATE "files" SET "name"=$1, "modify_at"=$2, "deleted"=%3 WHERE id=%4)`
+	stmt := `UPDATE "files" SET "name"=$1, "modified_at"=$2, "deleted"=%3 WHERE id=%4`
 
 	_, err := db.Exec(stmt, f.Name, f.ModifiedAt, f.Deleted, id)
 
