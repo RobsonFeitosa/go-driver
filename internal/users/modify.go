@@ -36,7 +36,11 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO get id
+	u, err = Get(h.db, int64(id))
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	rw.Header().Add("Content-type", "application/json")
 	json.NewEncoder(rw).Encode(u)
