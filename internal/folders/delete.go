@@ -31,6 +31,7 @@ func (h *handler) Delete(rw http.ResponseWriter, r *http.Request) {
 
 	// TODO: list folders
 
+	rw.WriteHeader(http.StatusNoContent)
 	rw.Header().Add("Content-Type", "application/json")
 }
 
@@ -44,7 +45,6 @@ func deleteFolderContent(db *sql.DB, folderID int64) error {
 }
 
 func deleteSubfolders(db *sql.DB, folderID int64) error {
-
 	subfolders, err := getSubFolder(db, folderID)
 	if err != nil {
 		return err
