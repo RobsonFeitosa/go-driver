@@ -22,7 +22,7 @@ func Auth(path, user, pass string) error {
 		return err
 	}
 
-	resp, err := doRequest("POST", path, &body, false)
+	resp, err := doRequest("POST", path, &body, nil, false)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,14 @@
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=imersao
+DB_PASS=123
+DB_NAME=imersao
+
+SERVER_PORT=
+
+RABBIT_URL=localhost
+RABBIT_TOPIC_NAME=upload
+
+AWS_REGION=us-east-1
+AWS_KEY=
+AWS_SECRET=
