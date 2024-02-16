@@ -4,14 +4,13 @@ import "github.com/spf13/cobra"
 
 func Register(c *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "folder",
-		Short: "Gestão de pastas",
+		Use:   "files",
+		Short: "Gestão de arquivos",
 	}
 
-	cmd.AddCommand(create())
+	cmd.AddCommand(upload())
 	cmd.AddCommand(update())
 	cmd.AddCommand(delete())
-	cmd.AddCommand(list())
 
 	c.AddCommand(cmd)
 }

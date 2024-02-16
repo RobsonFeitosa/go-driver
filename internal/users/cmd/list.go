@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/RobsonFeitosa/go-driver/internal/folders"
+	"github.com/RobsonFeitosa/go-driver/internal/users"
 	"github.com/RobsonFeitosa/go-driver/pkg/requests"
 	"github.com/spf13/cobra"
 )
@@ -16,11 +16,11 @@ func list() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "Lista conteúdo de uma pasta",
+		Short: "Lista de usuários",
 		Run: func(cmd *cobra.Command, args []string) {
-			path := "/folders"
+			path := "/users"
 			if id > 0 {
-				path = fmt.Sprintf("/folders/%d", id)
+				path = fmt.Sprintf("/users/%d", id)
 			}
 
 			data, err := requests.AuthenticatedGet(path)
@@ -29,18 +29,16 @@ func list() *cobra.Command {
 				os.Exit(1)
 			}
 
-			var fc folders.FolderContent
-			err = json.Unmarshal(data, &fc)
+			var u users.User
+			err = json.Unmarshal(data, &u)
 			if err != nil {
 				log.Printf("%x", err)
 				os.Exit(1)
 			}
 
-			log.Println(fc.Folder.Name)
-			log.Println("===================")
-			for _, c := range fc.Content {
-				log.Println(c.ID, " - ", c.Type, " - ", c.Name)
-			}
+			log.Println(u.Name)
+			log.Println(u.Login)
+			log.Println(u.Password)
 		},
 	}
 

@@ -4,8 +4,8 @@ import "github.com/spf13/cobra"
 
 func Register(c *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "folder",
-		Short: "Gestão de pastas",
+		Use:   "user",
+		Short: "Gestão de usuários",
 	}
 
 	cmd.AddCommand(create())
