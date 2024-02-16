@@ -3,6 +3,7 @@ package files
 import (
 	"database/sql"
 
+	"github.com/RobsonFeitosa/go-driver/internal/auth"
 	"github.com/RobsonFeitosa/go-driver/internal/bucket"
 	"github.com/RobsonFeitosa/go-driver/internal/queue"
 	"github.com/go-chi/chi"
@@ -17,7 +18,11 @@ type handler struct {
 func SetRoutes(r chi.Router, db *sql.DB, b *bucket.Bucket, q *queue.Queue) {
 	h := handler{db, b, q}
 
-	r.Post("/", h.Create)
-	r.Put("/{id}", h.Modify)
-	r.Delete("/{id}", h.Delete)
+	r.Route("/files", func(r chi.Router) {
+		r.Use(auth.Validate)
+
+		r.Post("/", h.Create)
+		r.Put("/{id}", h.Modify)
+		r.Delete("/{id}", h.Delete)
+	})
 }
