@@ -17,6 +17,10 @@ var (
 	ErrPasswordLength = errors.New("Password must have at least 6 characters")
 )
 
+func encPass(password string) string {
+	return fmt.Sprintf("%x", (md5.Sum([]byte(password))))
+}
+
 type User struct {
 	ID         int64     `json:"id"`
 	Name       string    `json:"name"`
@@ -37,7 +41,7 @@ func (u *User) SetPassword(password string) error {
 		return ErrPasswordLength
 	}
 
-	u.Password = fmt.Sprintf("%x", (md5.Sum([]byte(password))))
+	u.Password = encPass(password)
 
 	return nil
 }
