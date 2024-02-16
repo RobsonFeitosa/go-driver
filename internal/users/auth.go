@@ -4,8 +4,16 @@ import (
 	"time"
 )
 
+func (u *User) GetID() int64 {
+	return u.ID
+}
+
+func (u *User) GetName() string {
+	return u.Name
+}
+
 func (h *handler) authenticate(login, password string) (*User, error) {
-	stmt := `SELECT * FROM "users" WHERE login=$1 ans password=$2`
+	stmt := `SELECT * FROM "users" WHERE login=$1 and password=$2`
 	row := h.db.QueryRow(stmt, login, encPass(password))
 
 	var u User
@@ -23,8 +31,8 @@ func (h *handler) updateLastLogin(u *User) error {
 	return Update(h.db, u.ID, u)
 }
 
-func Authenticate(login, password string) (u *User, err error) {
-	u, err = gh.authenticate(login, password)
+func Authenticate(login, password string) (*User, error) {
+	u, err := gh.authenticate(login, password)
 	if err != nil {
 		return nil, err
 	}
@@ -34,5 +42,5 @@ func Authenticate(login, password string) (u *User, err error) {
 		return nil, err
 	}
 
-	return
+	return u, nil
 }
