@@ -56,3 +56,19 @@ func createTokenCache(body io.ReadCloser) error {
 	return err
 
 }
+
+func readCacheToken() (string, error) {
+	data, err := os.ReadFile(".cachetoken")
+	if err != nil {
+		return "", err
+	}
+
+	var cache cacheToken
+
+	err = json.Unmarshal(data, &cache)
+	if err != nil {
+		return "", err
+	}
+
+	return cache.Token, nil
+}
