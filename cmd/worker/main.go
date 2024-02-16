@@ -16,10 +16,13 @@ import (
 )
 
 func main() {
+	now := time.Now()
+	seconds := now.Add(30 * time.Second)
+
 	qcfg := queue.RabbitMQConfig{
 		URL:       os.Getenv("RABBIT_URL"),
 		TopicName: os.Getenv("RABBIT_TOP_NAME"),
-		Timeout:   time.Second * 30,
+		Timeout:   seconds,
 	}
 
 	// create new queue
