@@ -25,14 +25,14 @@ func list() *cobra.Command {
 
 			data, err := requests.AuthenticatedGet(path)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
 			var u users.User
 			err = json.Unmarshal(data, &u)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 

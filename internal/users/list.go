@@ -18,7 +18,7 @@ func (h *handler) List(rw http.ResponseWriter, r *http.Request) {
 }
 
 func SelectAll(db *sql.DB) ([]User, error) {
-	stmt := `SELECT * FROM "users" WHERE deleted = false`
+	stmt := `select * from "users" where deleted = false`
 	rows, err := db.Query(stmt)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,9 @@ func SelectAll(db *sql.DB) ([]User, error) {
 	us := make([]User, 0)
 	for rows.Next() {
 		var u User
-		err := rows.Scan(&u.ID, &u.Login, &u.Password, &u.CreatedAt, &u.ModifiedAt, &u.Deleted, &u.LastLogin)
+
+		err := rows.Scan(&u.ID, &u.Name, &u.Login, &u.Password,
+			&u.CreatedAt, &u.ModifiedAt, &u.Deleted, &u.LastLogin)
 		if err != nil {
 			continue
 		}

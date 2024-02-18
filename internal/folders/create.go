@@ -34,13 +34,12 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(f)
 }
 
-func Insert(db *sql.DB, f *Folder) (int64, error) {
-	stmt := `INSERT INTO "folders" ("parent_id", "name", "modified_at") VALUES ($1, $2, $3)`
-
-	result, err := db.Exec(stmt, f.ParentId, f.Name, f.ModifiedAt)
+func Insert(db *sql.DB, f *Folder) (id int64, err error) {
+	stmt := `insert into "folders" ("parent_id", "name", "modified_at") values ($1, $2, $3) RETURNING id`
+	err = db.QueryRow(stmt, f.ParentID, f.Name, f.ModifiedAt).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
 
-	return result.LastInsertId()
+	return
 }

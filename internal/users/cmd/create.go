@@ -36,13 +36,13 @@ func create() *cobra.Command {
 			var body bytes.Buffer
 			err := json.NewEncoder(&body).Encode(folder)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
 			_, err = requests.Post("/users", &body)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
@@ -51,8 +51,8 @@ func create() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Nome da pasta")
-	cmd.Flags().StringVarP(&login, "login", "1", "", "Login da pasta")
-	cmd.Flags().StringVarP(&login, "pass", "p", "", "Senha da pasta")
+	cmd.Flags().StringVarP(&login, "login", "l", "", "Login da pasta")
+	cmd.Flags().StringVarP(&pass, "pass", "p", "", "Senha da pasta")
 
 	return cmd
 }

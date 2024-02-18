@@ -24,7 +24,7 @@ func delete() *cobra.Command {
 			path := fmt.Sprintf("/files/%d", id)
 			err := requests.AuthenticatedDelete(path)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 

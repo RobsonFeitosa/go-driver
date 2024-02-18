@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 
@@ -12,37 +11,28 @@ import (
 )
 
 func list() *cobra.Command {
-	var id int32
-
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "Lista de usuários",
+		Short: "Lista usuários",
 		Run: func(cmd *cobra.Command, args []string) {
-			path := "/users"
-			if id > 0 {
-				path = fmt.Sprintf("/users/%d", id)
-			}
-
-			data, err := requests.AuthenticatedGet(path)
+			data, err := requests.AuthenticatedGet("/users")
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
-			var u users.User
-			err = json.Unmarshal(data, &u)
+			var us []users.User
+			err = json.Unmarshal(data, &us)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
-			log.Println(u.Name)
-			log.Println(u.Login)
-			log.Println(u.Password)
+			for _, u := range us {
+				log.Println(u.Name, u.Login, u.LastLogin)
+			}
 		},
 	}
-
-	cmd.Flags().Int32VarP(&id, "id", "", 0, "ID da pasta")
 
 	return cmd
 }

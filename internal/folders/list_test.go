@@ -1,53 +1,77 @@
 package folders
 
 import (
-	"context"
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 )
 
 func (ts *TransactionSuite) TestList() {
-	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/{id}", nil)
+	tcs := []struct {
+		WithMock         bool
+		MockListErr      bool
+		MockFilesErr     bool
+		ExpectStatusCode int
+	}{
+		// success
+		{true, false, false, http.StatusOK},
+		// errors
+		{false, true, true, http.StatusInternalServerError},
+		{true, true, true, http.StatusInternalServerError},
+	}
 
-	ctx := chi.NewRouteContext()
-	ctx.URLParams.Add("id", "1")
+	for _, tc := range tcs {
+		rr := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
+		if tc.WithMock {
+			setMockList(ts.mock, tc.MockListErr)
+			if !tc.MockListErr {
+				setMockListRootFiles(ts.mock, tc.MockFilesErr)
+			}
+		}
 
-	setMockFoldersParentIdNull(ts.mock)
-	setMockFilesFolderIdNull(ts.mock)
-
-	ts.handler.List(rr, req)
-	assert.Equal(ts.T(), http.StatusOK, rr.Code)
+		ts.handler.List(rr, req)
+		assert.Equal(ts.T(), tc.ExpectStatusCode, rr.Code)
+	}
 }
-func (ts *TransactionSuite) TestGetRootSubFolders() {
-	setMockFoldersParentIdNull(ts.mock)
 
-	_, err := getRootSubFolder(ts.conn)
+func (ts *TransactionSuite) TestGetRootSubFolders() {
+	setMockList(ts.mock, false)
+
+	_, err := getRootSubFolders(ts.conn)
 	assert.NoError(ts.T(), err)
 }
 
-func setMockFoldersParentIdNull(mock sqlmock.Sqlmock) {
-	rows := sqlmock.NewRows([]string{"id", "parent_id", "name", "created_at", "modified_at", "deleted"}).
-		AddRow(1, nil, "Documentos", time.Now(), time.Now(), false).
-		AddRow(5, nil, "Imagens", time.Now(), time.Now(), false)
+func setMockList(mock sqlmock.Sqlmock, err bool) {
+	exp := mock.ExpectQuery(regexp.QuoteMeta(`select * from "folders" where "parent_id" is null and "deleted"=false`))
 
-	mock.ExpectQuery(regexp.QuoteMeta(`select * from "folders" where "parent_id" is null and "deleted"=false`)).
-		WillReturnRows(rows)
+	if err {
+		exp.WillReturnError(sql.ErrNoRows)
+	} else {
+		rows := sqlmock.NewRows([]string{"id", "parent_id", "name", "created_at", "modified_at", "deleted"}).
+			AddRow(1, 0, "Documentos", time.Now(), time.Now(), false).
+			AddRow(5, 0, "Imagens", time.Now(), time.Now(), false)
+
+		exp.WillReturnRows(rows)
+	}
 }
 
-func setMockFilesFolderIdNull(mock sqlmock.Sqlmock) {
-	filesRows := sqlmock.NewRows([]string{"id", "folder_id", "owner_id", "name", "type", "path", "created_at", "modified_at", "deleted"}).
-		AddRow(1, nil, 1, "robson", "jpg", "/", time.Now(), time.Now(), false).
-		AddRow(2, nil, 1, "ana", "jpg", "/", time.Now(), time.Now(), false)
+func setMockListRootFiles(mock sqlmock.Sqlmock, err bool) {
+	exp := mock.ExpectQuery(regexp.QuoteMeta(`select * from files where "folder_id" is null and "deleted"=false`))
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "files" WHERE  "folder_id" is null and "deleted"=false`)).
-		WillReturnRows(filesRows)
+	if err {
+		exp.WillReturnError(sql.ErrNoRows)
+	} else {
+		rows := sqlmock.NewRows([]string{"id", "folder_id", "owner_id", "name", "type", "path", "created_at", "modified_at", "deleted"}).
+			AddRow(1, 0, 1, "Gopher.png", "image/png", "/", time.Now(), time.Now(), false).
+			AddRow(2, 0, 1, "Golang-LOGO.png", "image/jpg", "/", time.Now(), time.Now(), false)
+
+		exp.WillReturnRows(rows)
+	}
 }

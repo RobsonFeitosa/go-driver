@@ -8,7 +8,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = "698dc19d489c4e4db73e28a713eab07b"
+var jwtSecret = "98wly4tgop98w4UTYOWG9A8W3U4TL9lksdjrogphge4oys4e0GUWYO8OGFSushgals48la"
+
+func GetSecret() string {
+	return jwtSecret
+}
 
 type Claims struct {
 	UserID   int64  `json:"user_id"`
@@ -27,9 +31,9 @@ func createToken(authenticated Authenticated) (string, error) {
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(jwtSecret))
 }
 
 type Credentials struct {

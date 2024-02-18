@@ -31,7 +31,7 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = Update(h.db, f, int64(id))
+	err = Update(h.db, int64(id), f)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -47,13 +47,11 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(f)
 }
 
-func Update(db *sql.DB, f *Folder, id int64) error {
+func Update(db *sql.DB, id int64, f *Folder) error {
 	f.ModifiedAt = time.Now()
 
-	stmt := `UPDATE "folders" SET "name"=$1, "modified_at"=%2 WHERE id=%3`
-
+	stmt := `update "folders" set name = $1, modified_at = $2 where id = $3`
 	_, err := db.Exec(stmt, f.Name, f.ModifiedAt, id)
 
 	return err
-
 }

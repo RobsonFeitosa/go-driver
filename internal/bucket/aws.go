@@ -32,40 +32,43 @@ type awsSession struct {
 	bucketUpload   string
 }
 
-func (as *awsSession) Download(src, dst string) (file *os.File, err error) {
-	file, err = os.Create(dst)
+func (as *awsSession) Download(src, dst string) error {
+	file, err := os.Create(dst)
 	if err != nil {
-		return
+		return err
 	}
 	defer file.Close()
 
 	downloader := s3manager.NewDownloader(as.sess)
 
-	_, err = downloader.Download(file, &s3.GetObjectInput{
-		Bucket: aws.String(as.bucketDownload),
-		Key:    aws.String(src),
-	})
-	return
+	_, err = downloader.Download(file,
+		&s3.GetObjectInput{
+			Bucket: aws.String(as.bucketDownload),
+			Key:    aws.String(src),
+		})
+
+	return nil
 }
 
 func (as *awsSession) Upload(file io.Reader, key string) error {
-	uploader := s3manager.NewUploader((as.sess))
+	uploader := s3manager.NewUploader(as.sess)
 
 	_, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(as.bucketUpload),
 		Key:    aws.String(key),
 		Body:   file,
 	})
+
 	return err
 }
 
 func (as *awsSession) Delete(key string) error {
 	svc := s3.New(as.sess)
 
-	_, err := svc.DeleteObject((&s3.DeleteObjectInput{
+	_, err := svc.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(as.bucketDownload),
 		Key:    aws.String(key),
-	}))
+	})
 	if err != nil {
 		return err
 	}

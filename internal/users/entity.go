@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrNameRequire = errors.New("Name is required")
+	ErrNameRequired = errors.New("name is required")
 
 	ErrLoginRequire = errors.New("Login is required")
 
@@ -49,7 +49,7 @@ func (u *User) SetPassword(password string) error {
 func (u *User) Validate() error {
 
 	if u.Name == "" {
-		return ErrNameRequire
+		return ErrNameRequired
 	}
 
 	if u.Login == "" {

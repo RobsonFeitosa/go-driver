@@ -8,7 +8,7 @@ import (
 )
 
 func doRequest(method, path string, body io.Reader, headers map[string]string, auth bool) (*http.Response, error) {
-	url := fmt.Sprintf("http://localhost:8000%s", path)
+	url := fmt.Sprintf("http://localhost:8090%s", path)
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
@@ -19,10 +19,14 @@ func doRequest(method, path string, body io.Reader, headers map[string]string, a
 		req.Header.Add("Content-Type", "application/json")
 	}
 
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+
 	if auth {
 		token, err := readCacheToken()
 		if err != nil {
-			log.Println("Não foi possivel obter o token")
+			log.Println("Não foi possível obter o token")
 			return nil, err
 		}
 

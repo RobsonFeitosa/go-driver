@@ -13,7 +13,7 @@ type handler struct {
 	authenticate authenticateFunc
 }
 
-func HandlerAuth(fn authenticateFunc) func(http.ResponseWriter, *http.Request) {
+func HandleAuth(fn authenticateFunc) func(http.ResponseWriter, *http.Request) {
 	h := handler{fn}
 
 	return h.auth

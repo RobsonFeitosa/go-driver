@@ -13,11 +13,12 @@ func (u *User) GetName() string {
 }
 
 func (h *handler) authenticate(login, password string) (*User, error) {
-	stmt := `SELECT * FROM "users" WHERE login=$1 and password=$2`
+	stmt := `select * from "users" where login=$1 and password=$2`
 	row := h.db.QueryRow(stmt, login, encPass(password))
 
 	var u User
-	err := row.Scan(&u.ID, &u.Name, &u.Login, &u.Password, &u.CreatedAt, &u.ModifiedAt, &u.Deleted, &u.LastLogin)
+	err := row.Scan(&u.ID, &u.Name, &u.Login, &u.Password,
+		&u.CreatedAt, &u.ModifiedAt, &u.Deleted, &u.LastLogin)
 	if err != nil {
 		return nil, err
 	}

@@ -23,14 +23,14 @@ func upload() *cobra.Command {
 		Use:   "upload",
 		Short: "Faz upload de um novo arquivo",
 		Run: func(cmd *cobra.Command, args []string) {
-			if filename == "" || folderID <= 0 {
+			if filename == "" {
 				log.Println("Caminho do arquivo é obrigatório")
 				os.Exit(1)
 			}
 
 			file, err := os.Open(filename)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Println("%v", err)
 				os.Exit(1)
 			}
 			defer file.Close()
@@ -40,7 +40,7 @@ func upload() *cobra.Command {
 			mw := multipart.NewWriter(&body)
 			w, err := mw.CreateFormFile("file", filepath.Base(file.Name()))
 			if err != nil {
-				log.Printf("%x", err)
+				log.Println("%v", err)
 				os.Exit(1)
 			}
 			io.Copy(w, file)
@@ -48,7 +48,7 @@ func upload() *cobra.Command {
 			if folderID > 0 {
 				w, err := mw.CreateFormField("folder_id")
 				if err != nil {
-					log.Println("%x", err)
+					log.Println("%v", err)
 					os.Exit(1)
 				}
 				w.Write([]byte(strconv.Itoa(int(folderID))))
@@ -62,7 +62,7 @@ func upload() *cobra.Command {
 
 			_, err = requests.AuthenticatedPostWithHeaders("/files", &body, headers)
 			if err != nil {
-				log.Println("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
@@ -70,8 +70,8 @@ func upload() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&filename, "filename", "f", "", "Caminho do arquivo")
-	cmd.Flags().Int32VarP(&folderID, "folder", "p", 0, "ID do arquivo")
+	cmd.Flags().StringVarP(&filename, "filename", "f", "", "Caminho para o arquivo")
+	cmd.Flags().Int32VarP(&folderID, "folder", "p", 0, "ID da pasta onde o arquivo será enviado")
 
 	return cmd
 }

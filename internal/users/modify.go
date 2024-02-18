@@ -20,7 +20,7 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if u.Name == "" {
-		http.Error(rw, ErrNameRequire.Error(), http.StatusBadRequest)
+		http.Error(rw, ErrNameRequired.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -42,15 +42,14 @@ func (h *handler) Modify(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rw.Header().Add("Content-type", "application/json")
+	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(u)
 }
 
 func Update(db *sql.DB, id int64, u *User) error {
 	u.ModifiedAt = time.Now()
 
-	stmt := `UPDATE "users" SET "name"=$1, "modified_at"=%2 "last_login"=$3 WHERE id=%4`
-
+	stmt := `update "users" set "name"=$1, "modified_at"=$2, "last_login"=$3 where id=$4`
 	_, err := db.Exec(stmt, u.Name, u.ModifiedAt, u.LastLogin, id)
 
 	return err

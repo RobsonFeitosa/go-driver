@@ -40,7 +40,7 @@ func GetFolder(db *sql.DB, folderID int64) (*Folder, error) {
 	row := db.QueryRow(stmt, folderID)
 
 	var f Folder
-	err := row.Scan(&f.ID, &f.ParentId, &f.Name, &f.CreatedAt, &f.ModifiedAt, &f.Deleted)
+	err := row.Scan(&f.ID, &f.ParentID, &f.Name, &f.CreatedAt, &f.ModifiedAt, &f.Deleted)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func GetFolder(db *sql.DB, folderID int64) (*Folder, error) {
 	return &f, nil
 }
 
-func getSubFolder(db *sql.DB, folderID int64) ([]Folder, error) {
-	stmt := `select * from "folders" where parent_id=$1 and "deleted"=false`
+func getSubFolders(db *sql.DB, folderID int64) ([]Folder, error) {
+	stmt := `select * from "folders" where "parent_id"=$1 and "deleted"=false`
 	rows, err := db.Query(stmt, folderID)
 	if err != nil {
 		return nil, err
@@ -58,20 +58,20 @@ func getSubFolder(db *sql.DB, folderID int64) ([]Folder, error) {
 	f := make([]Folder, 0)
 	for rows.Next() {
 		var folder Folder
-
-		err := rows.Scan(&folder.ID, &folder.ParentId, &folder.Name, &folder.CreatedAt, &folder.ModifiedAt, &folder.Deleted)
+		err := rows.Scan(&folder.ID, &folder.ParentID, &folder.Name,
+			&folder.CreatedAt, &folder.ModifiedAt, &folder.Deleted)
 		if err != nil {
 			continue
 		}
 
 		f = append(f, folder)
-
 	}
+
 	return f, nil
 }
 
 func GetFolderContent(db *sql.DB, folderID int64) ([]FolderResource, error) {
-	subfolders, err := getSubFolder(db, folderID)
+	subfolders, err := getSubFolders(db, folderID)
 	if err != nil {
 		return nil, err
 	}
@@ -107,5 +107,4 @@ func GetFolderContent(db *sql.DB, folderID int64) ([]FolderResource, error) {
 	}
 
 	return fr, nil
-
 }

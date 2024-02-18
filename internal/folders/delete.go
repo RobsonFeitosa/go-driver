@@ -29,23 +29,21 @@ func (h *handler) Delete(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: list folders
-
 	rw.WriteHeader(http.StatusNoContent)
 	rw.Header().Add("Content-Type", "application/json")
 }
 
 func deleteFolderContent(db *sql.DB, folderID int64) error {
-	err := deleteFiles(db, int64(folderID))
+	err := deleteFiles(db, folderID)
 	if err != nil {
 		return err
 	}
 
-	return deleteSubfolders(db, int64(folderID))
+	return deleteSubfolders(db, folderID)
 }
 
 func deleteSubfolders(db *sql.DB, folderID int64) error {
-	subfolders, err := getSubFolder(db, folderID)
+	subfolders, err := getSubFolders(db, folderID)
 	if err != nil {
 		return err
 	}
@@ -59,7 +57,7 @@ func deleteSubfolders(db *sql.DB, folderID int64) error {
 
 		err = deleteFolderContent(db, sf.ID)
 		if err != nil {
-			Update(db, &sf, sf.ID)
+			Update(db, sf.ID, &sf)
 			break
 		}
 
@@ -68,7 +66,7 @@ func deleteSubfolders(db *sql.DB, folderID int64) error {
 
 	if len(subfolders) != len(removedFolders) {
 		for _, rf := range removedFolders {
-			Update(db, &rf, rf.ID)
+			Update(db, rf.ID, &rf)
 		}
 	}
 
@@ -76,7 +74,7 @@ func deleteSubfolders(db *sql.DB, folderID int64) error {
 }
 
 func deleteFiles(db *sql.DB, folderID int64) error {
-	f, err := files.List(db, int64(folderID))
+	f, err := files.List(db, folderID)
 	if err != nil {
 		return err
 	}
@@ -84,7 +82,7 @@ func deleteFiles(db *sql.DB, folderID int64) error {
 	removedFiles := make([]files.File, 0, len(f))
 	for _, file := range f {
 		file.Deleted = true
-		err := files.Update(db, &file, file.ID)
+		err = files.Update(db, file.ID, &file)
 		if err != nil {
 			break
 		}
@@ -95,7 +93,7 @@ func deleteFiles(db *sql.DB, folderID int64) error {
 	if len(f) != len(removedFiles) {
 		for _, file := range removedFiles {
 			file.Deleted = false
-			files.Update(db, &file, file.ID)
+			files.Update(db, file.ID, &file)
 		}
 
 		return err
@@ -105,9 +103,8 @@ func deleteFiles(db *sql.DB, folderID int64) error {
 }
 
 func Delete(db *sql.DB, id int64) error {
-	stmt := `update "folders" set "modified_at"=$1, "deleted"=%2 where id=$3`
+	stmt := `update "folders" set "modified_at"=$1, "deleted"=true where id=$2`
 	_, err := db.Exec(stmt, time.Now(), id)
 
 	return err
-
 }

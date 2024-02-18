@@ -28,13 +28,13 @@ func create() *cobra.Command {
 			var body bytes.Buffer
 			err := json.NewEncoder(&body).Encode(folder)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
 			_, err = requests.AuthenticatedPost("/folders", &body)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 

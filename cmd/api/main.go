@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 )
 
 func main() {
@@ -25,7 +26,13 @@ func main() {
 
 	r := chi.NewRouter()
 
-	r.Post("/auth", auth.HandlerAuth(func(login, pass string) (auth.Authenticated, error) {
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"https://*", "http://*"},
+		AllowedMethods: []string{"POST", "GET", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Authorization", "Accept", "Content-Type"},
+	}))
+
+	r.Post("/auth", auth.HandleAuth(func(login, pass string) (auth.Authenticated, error) {
 		return users.Authenticate(login, pass)
 	}))
 
@@ -33,6 +40,7 @@ func main() {
 	folders.SetRoutes(r, db)
 	users.SetRoutes(r, db)
 
+	fmt.Println("Server started")
 	http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("SERVER_PORT")), r)
 }
 
@@ -42,29 +50,24 @@ func getSessions() (*sql.DB, *bucket.Bucket, *queue.Queue) {
 		log.Fatal(err)
 	}
 
-	now := time.Now()
-	seconds := now.Add(30 * time.Second)
-
 	qcfg := queue.RabbitMQConfig{
-		URL:       os.Getenv("RABBIT_URL"),
-		TopicName: os.Getenv("RABBIT_TOP_NAME"),
-		Timeout:   seconds,
+		URL:       "amqp://" + os.Getenv("RABBIT_URL"),
+		TopicName: os.Getenv("RABBIT_TOPIC_NAME"),
+		Timeout:   time.Second * 30,
 	}
 
-	// create new queue
 	qc, err := queue.New(queue.RabbitMQ, qcfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// bucket config
 	bcfg := bucket.AwsConfig{
 		Config: &aws.Config{
 			Region:      aws.String(os.Getenv("AWS_REGION")),
 			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_KEY"), os.Getenv("AWS_SECRET"), ""),
 		},
-		BucketDownload: "golang-drive-raw",
-		BucketUpload:   "golang-drive-gzip",
+		BucketDownload: "golang-drive-gzip",
+		BucketUpload:   "golang-drive-raw",
 	}
 
 	// create new bucket session

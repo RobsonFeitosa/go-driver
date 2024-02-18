@@ -30,14 +30,14 @@ func update() *cobra.Command {
 			var body bytes.Buffer
 			err := json.NewEncoder(&body).Encode(file)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
 			path := fmt.Sprintf("/files/%d", id)
 			_, err = requests.AuthenticatedPut(path, &body)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 

@@ -16,55 +16,66 @@ import (
 )
 
 func main() {
-	now := time.Now()
-	seconds := now.Add(30 * time.Second)
-
 	qcfg := queue.RabbitMQConfig{
-		URL:       os.Getenv("RABBIT_URL"),
-		TopicName: os.Getenv("RABBIT_TOP_NAME"),
-		Timeout:   seconds,
+		URL:       "amqp://" + os.Getenv("RABBIT_URL"),
+		TopicName: os.Getenv("RABBIT_TOPIC_NAME"),
+		Timeout:   time.Second * 30,
 	}
 
-	// create new queue
+	fmt.Println("entrou1")
+
 	qc, err := queue.New(queue.RabbitMQ, qcfg)
 	if err != nil {
 		panic(err)
 	}
 
-	// create channel to consume message
-	c := make(chan queue.QueueDto)
-	qc.Consume(c)
+	fmt.Println("entrou2")
+	c := make(chan queue.QueueDto, 1)
+	go qc.Consume(c)
 
-	// bucket config
 	bcfg := bucket.AwsConfig{
 		Config: &aws.Config{
 			Region:      aws.String(os.Getenv("AWS_REGION")),
 			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_KEY"), os.Getenv("AWS_SECRET"), ""),
 		},
-		BucketDownload: "golang-drive-raw",
-		BucketUpload:   "golang-drive-gzip",
+		BucketDownload: "aprenda-golang-drive-raw",
+		BucketUpload:   "aprenda-golang-drive-gzip",
 	}
 
-	// create new bucket session
+	fmt.Println("entrou3")
+
 	b, err := bucket.New(bucket.AwsProvider, bcfg)
 	if err != nil {
 		panic(err)
 	}
 
+	log.Println("waiting for messages")
 	for msg := range c {
-		src := fmt.Sprintf("%s/%s", msg.Path, msg.Filename)
 		dst := fmt.Sprintf("%d_%s", msg.ID, msg.Filename)
-		file, err := b.Download(src, dst)
+
+		log.Printf("Start working on %s\n", msg.Filename)
+
+		err := b.Download(msg.Path, dst)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+			continue
+		}
+		fmt.Println("entrou4", dst)
+
+		file, err := os.Open(dst)
 		if err != nil {
 			log.Printf("ERROR: %v", err)
 			continue
 		}
 
+		fmt.Println("entrou5")
 		body, err := io.ReadAll(file)
 		if err != nil {
 			log.Printf("ERROR: %v", err)
+			continue
 		}
 
+		fmt.Println("entrou6")
 		var buf bytes.Buffer
 		zw := gzip.NewWriter(&buf)
 		_, err = zw.Write(body)
@@ -73,10 +84,12 @@ func main() {
 			continue
 		}
 
+		fmt.Println("entrou7")
 		if err := zw.Close(); err != nil {
 			log.Printf("ERROR: %v", err)
 			continue
 		}
+		fmt.Println("entrou8")
 
 		zr, err := gzip.NewReader(&buf)
 		if err != nil {
@@ -84,16 +97,22 @@ func main() {
 			continue
 		}
 
-		err = b.Upload(zr, src)
+		fmt.Println("entrou9", zr, msg.Path)
+
+		err = b.Upload(zr, msg.Path)
 		if err != nil {
 			log.Printf("ERROR: %v", err)
 			continue
 		}
+
+		fmt.Println("entrou10")
 
 		err = os.Remove(dst)
 		if err != nil {
 			log.Printf("ERROR: %v", err)
 			continue
 		}
+
+		log.Printf("%s was proccesed with success!\n", msg.Filename)
 	}
 }

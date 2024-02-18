@@ -14,21 +14,22 @@ func delete() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "delete",
-		Short: "Deleta um  usuário",
+		Short: "Deleta um usuário",
 		Run: func(cmd *cobra.Command, args []string) {
 			if id <= 0 {
 				log.Println("ID é obrigatório")
 				os.Exit(1)
 			}
 
-			path := fmt.Sprintf("/folders/%d", id)
+			path := fmt.Sprintf("/users/%d", id)
+
 			err := requests.AuthenticatedDelete(path)
 			if err != nil {
-				log.Printf("%x", err)
+				log.Printf("%v", err)
 				os.Exit(1)
 			}
 
-			log.Println("Usuário deletado com sucesso!")
+			log.Println("Usuário deletada com sucesso!")
 		},
 	}
 

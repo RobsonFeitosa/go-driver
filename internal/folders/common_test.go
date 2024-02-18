@@ -37,44 +37,32 @@ func (ts *TransactionSuite) SetupTest() {
 	ts.handler = handler{ts.conn}
 
 	ts.entity = &Folder{
+		ID:   1,
 		Name: "Fotos",
 	}
-
-	assert.NoError(ts.T(), err)
 }
 
 func (ts *TransactionSuite) AfterTest(_, _ string) {
 	assert.NoError(ts.T(), ts.mock.ExpectationsWereMet())
 }
 
+func setMockListFiles(mock sqlmock.Sqlmock, id int64, err bool, withRows bool) {
+	exp := mock.ExpectQuery(regexp.QuoteMeta(`select * from files where "folder_id" = $1 and "deleted"=false`)).
+		WithArgs(id)
+
+	if err {
+		exp.WillReturnError(sql.ErrNoRows)
+	} else {
+		rows := sqlmock.NewRows([]string{"id", "folder_id", "owner_id", "name", "type", "path", "created_at", "modified_at", "deleted"})
+		if withRows {
+			rows.AddRow(1, id, 1, "Gopher.png", "image/png", "/", time.Now(), time.Now(), false).
+				AddRow(2, id, 1, "Golang-LOGO.png", "image/jpg", "/", time.Now(), time.Now(), false)
+		}
+
+		exp.WillReturnRows(rows)
+	}
+}
+
 func TestSuite(t *testing.T) {
 	suite.Run(t, new(TransactionSuite))
-}
-
-func setMockListFile(mock sqlmock.Sqlmock) {
-	rows := sqlmock.NewRows([]string{"id", "folder_id", "owner_id", "name", "type", "path", "created_at", "modified_at", "deleted"}).
-		AddRow(1, 1, 1, "robson", "jpg", "/", time.Now(), time.Now(), false).
-		AddRow(2, 1, 1, "ana", "jpg", "/", time.Now(), time.Now(), false)
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "files" WHERE "folder_id" = $1 and "deleted"=false`)).
-		WillReturnRows(rows)
-}
-
-func setMockGetFolder(mock sqlmock.Sqlmock) {
-	rows := sqlmock.NewRows([]string{"id", "parent_id", "name", "created_at", "modified_at", "deleted"}).
-		AddRow(1, 2, "Documentos", time.Now(), time.Now(), false)
-
-	mock.ExpectQuery(regexp.QuoteMeta(`select * from "folders" where id=$1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
-}
-
-func setMockListFolders(mock sqlmock.Sqlmock) {
-	foldersRows := sqlmock.NewRows([]string{"id", "parent_id", "name", "created_at", "modified_at", "deleted"}).
-		AddRow(2, 3, "Projetos", time.Now(), time.Now(), false).
-		AddRow(4, 3, "Trabalhos", time.Now(), time.Now(), false)
-
-	mock.ExpectQuery(regexp.QuoteMeta(`select * from "folders" where parent_id=$1 and "deleted"=false`)).
-		WithArgs(1).
-		WillReturnRows(foldersRows)
 }

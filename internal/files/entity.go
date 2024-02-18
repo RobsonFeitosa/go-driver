@@ -3,23 +3,25 @@ package files
 import (
 	"errors"
 	"time"
+
+	"gopkg.in/guregu/null.v4"
 )
 
 var (
-	ErrOwnerRequire = errors.New("owner is required")
+	ErrOwnerRequired = errors.New("owner is required")
 
-	ErrNameRequire = errors.New("name is required")
+	ErrNameRequired = errors.New("name is required")
 
-	ErrTypeRequire = errors.New("type is required")
+	ErrTypeRequired = errors.New("type is required")
 
-	ErrPathRequire = errors.New("path is required")
+	ErrPathRequired = errors.New("path is required")
 )
 
-func New(ownerID int64, name, filetype, path string) (*File, error) {
+func New(ownerID int64, name, fileType, path string) (*File, error) {
 	f := File{
 		OwnerID:    ownerID,
 		Name:       name,
-		Type:       filetype,
+		Type:       fileType,
 		Path:       path,
 		ModifiedAt: time.Now(),
 	}
@@ -34,7 +36,7 @@ func New(ownerID int64, name, filetype, path string) (*File, error) {
 
 type File struct {
 	ID         int64     `json:"id"`
-	FolderID   int64     `json:"-"`
+	FolderID   null.Int  `json:"-"`
 	OwnerID    int64     `json:"owner_id"`
 	Name       string    `json:"name"`
 	Type       string    `json:"type"`
@@ -45,21 +47,17 @@ type File struct {
 }
 
 func (f *File) Validate() error {
-
 	if f.OwnerID == 0 {
-		return ErrOwnerRequire
+		return ErrOwnerRequired
 	}
-
 	if f.Name == "" {
-		return ErrNameRequire
+		return ErrNameRequired
 	}
-
 	if f.Type == "" {
-		return ErrTypeRequire
+		return ErrTypeRequired
 	}
-
 	if f.Path == "" {
-		return ErrPathRequire
+		return ErrPathRequired
 	}
 
 	return nil

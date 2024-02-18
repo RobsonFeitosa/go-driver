@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/RobsonFeitosa/go-driver/internal/queue"
+	"gopkg.in/guregu/null.v4"
 )
 
 func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
@@ -45,7 +46,7 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		entity.FolderID = int64(fid)
+		entity.FolderID = null.IntFrom(int64(fid))
 	}
 
 	id, err := Insert(h.db, entity)
@@ -61,13 +62,15 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		Path:     path,
 		ID:       int(id),
 	}
-
 	msg, err := dto.Marshal()
+	fmt.Println("entrou11", msg)
 	if err != nil {
-		//TODO: rollback
+		// TODO: rollback
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println("entrou2", msg)
 
 	err = h.queue.Publish(msg)
 	if err != nil {
@@ -80,12 +83,13 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(rw).Encode(entity)
 }
 
-func Insert(db *sql.DB, f *File) (int64, error) {
-	stmt := `insert into "files" ("folder_id", "owner_id", "name", "type", "path", "modified_at") values ($1, $2, $3, $4, $5, $6)`
-	result, err := db.Exec(stmt, f.FolderID, f.OwnerID, f.Name, f.Type, f.Path, f.ModifiedAt)
+func Insert(db *sql.DB, f *File) (id int64, err error) {
+	stmt := `insert into "files" ("folder_id", "owner_id", "name", "type", "path", "modified_at") VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
+	err = db.QueryRow(stmt, f.FolderID, f.OwnerID, f.Name,
+		f.Type, f.Path, f.ModifiedAt).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
 
-	return result.LastInsertId()
+	return
 }
