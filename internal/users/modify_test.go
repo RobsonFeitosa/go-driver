@@ -3,10 +3,13 @@ package users
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,27 +17,30 @@ import (
 func (ts *TransactionSuite) TestModify() {
 	tcs := []struct {
 		ID                string
-		MockID            int64
 		WithMock          bool
-		WithUser          *User
+		MockUser          *User
 		MockUpdateWithErr bool
 		MockGetWithErr    bool
 		ExpectStatusCode  int
 	}{
 		// success
-		{"1", 1, true, &User{ID: 1, Name: "Robson"}, false, false, http.StatusOK},
-		// error
-		{"2", 2, false, nil, true, true, http.StatusBadRequest},
-		{"10", 10, false, &User{ID: 10}, true, false, http.StatusBadRequest},
-		{"A", 0, false, &User{Name: "Robson"}, true, false, http.StatusInternalServerError},
-		// {"25", 25, true, &User{ID: 25, Name: "Robson"}, true, false, http.StatusInternalServerError},
-		// {"500", true, &User{ID: 500, Name: "Robson"}, false, true, http.StatusInternalServerError},
+		{"1", true, &User{ID: 1, Name: "Tiago Temporin"}, false, false, http.StatusOK},
+		// errors
+		{"5", false, nil, true, true, http.StatusInternalServerError},
+		{"10", false, &User{ID: 10}, true, false, http.StatusBadRequest},
+		{"A", false, &User{Name: "Tiago Temporin"}, true, false, http.StatusInternalServerError},
+		{"25", true, &User{ID: 25, Name: "Tiago Temporin"}, true, false, http.StatusInternalServerError},
+		{"500", true, &User{ID: 500, Name: "Tiago Temporin"}, false, true, http.StatusInternalServerError},
 	}
 
 	for _, tc := range tcs {
 		var b bytes.Buffer
-		err := json.NewEncoder(&b).Encode(tc.WithUser)
-		assert.NoError(ts.T(), err)
+		if tc.MockUser != nil {
+			err := json.NewEncoder(&b).Encode(tc.MockUser)
+			assert.NoError(ts.T(), err)
+		} else {
+			b.Write([]byte(`{"name": false}`))
+		}
 
 		rr := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPut, "/{id}", &b)
@@ -45,19 +51,32 @@ func (ts *TransactionSuite) TestModify() {
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
 
 		if tc.WithMock {
-			setMockUpdate(ts.mock, tc.WithUser, tc.MockID, tc.MockUpdateWithErr)
-			setMockGet(ts.mock, tc.WithUser)
+			setMockUpdate(ts.mock, tc.MockUser.ID, tc.MockUser.Name, tc.MockUpdateWithErr)
+			// caso o mock para update retornar erro, não podemos fazer o mock do get
+			if !tc.MockUpdateWithErr {
+				setMockGet(ts.mock, tc.MockUser.ID, tc.MockGetWithErr)
+			}
 		}
 
 		ts.handler.Modify(rr, req)
-
 		assert.Equal(ts.T(), tc.ExpectStatusCode, rr.Code)
 	}
 }
 
 func (ts *TransactionSuite) TestUpdate() {
-	setMockUpdate(ts.mock, ts.entity, 1, false)
+	setMockUpdate(ts.mock, 1, "Robson Feitosa", false)
 
-	err := Update(ts.conn, 1, &User{Name: "Robson"})
+	err := Update(ts.conn, 1, &User{Name: "Robson Feitosa"})
 	assert.NoError(ts.T(), err)
+}
+
+func setMockUpdate(mock sqlmock.Sqlmock, id int64, name string, err bool) {
+	exp := mock.ExpectExec(regexp.QuoteMeta(`update "users" set "name"=$1, "modified_at"=$2 where id=$3`)).
+		WithArgs(name, AnyTime{}, id)
+
+	if err {
+		exp.WillReturnError(sql.ErrNoRows)
+	} else {
+		exp.WillReturnResult(sqlmock.NewResult(1, 1))
+	}
 }

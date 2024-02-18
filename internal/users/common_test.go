@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"database/sql/driver"
-	"regexp"
 	"testing"
 	"time"
 
@@ -51,53 +50,4 @@ func (ts *TransactionSuite) AfterTest(_, _ string) {
 
 func TestSuite(t *testing.T) {
 	suite.Run(t, new(TransactionSuite))
-}
-
-func setMockInsert(mock sqlmock.Sqlmock, entity *User) {
-	mock.ExpectExec(`INSERT INTO "users" ("name", "login", "password", "modified_at")*`).
-		WithArgs(entity.Name, entity.Login, entity.Password, entity.ModifiedAt).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-}
-
-func setMockGet(mock sqlmock.Sqlmock, entity *User) {
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Robson", "robson.gw@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now())
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id=$1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
-
-	// if err {
-	// 	exp.WillReturnError(sql.ErrNoRows)
-	// } else {
-	// 	exp.WillReturnRows(rows)
-	// }
-}
-
-// rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-// AddRow(1, "Robson", "robson.gw@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now())
-
-// mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id=$1`)).
-// WithArgs(1).
-// WillReturnRows(rows)
-// }
-
-func setMockUpdate(mock sqlmock.Sqlmock, entity *User, id int64, err bool) {
-	exp := mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "name"=$1, "modified_at"=%2 WHERE id=%3`)).
-		WithArgs(entity.Name, AnyTime{}, id)
-
-	if err {
-		exp.WillReturnError(sql.ErrNoRows)
-	} else {
-		exp.WillReturnResult(sqlmock.NewResult(1, 1))
-	}
-}
-
-func setMockList(mock sqlmock.Sqlmock, entity *User) {
-	rows := sqlmock.NewRows([]string{"id", "name", "login", "password", "created_at", "modified_at", "deleted", "last_login"}).
-		AddRow(1, "Robson", "robson.gw@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now()).
-		AddRow(2, "Ana", "ana@hotmail.com", "123456", time.Now(), time.Now(), false, time.Now())
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE deleted = false`)).
-		WillReturnRows(rows)
 }

@@ -2,6 +2,7 @@ package files
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -14,40 +15,72 @@ import (
 )
 
 func (ts *TransactionSuite) TestCreate() {
-	body := new(bytes.Buffer)
+	tcs := []struct {
+		WithMock         bool
+		WithUpload       bool
+		File             *File
+		FolderID         int64
+		MockFolderID     string
+		MockWithErr      bool
+		ExpectStatusCode int
+	}{
+		// success
+		{true, true, ts.entity, 0, "", false, http.StatusCreated},
+		{true, true, ts.entity, 15, "15", false, http.StatusCreated},
+		// errors
+		{false, false, nil, 0, "", true, http.StatusInternalServerError},
+		{false, true, &File{Name: ".empty"}, 0, "", true, http.StatusInternalServerError},
+		{false, true, ts.entity, 0, "A", false, http.StatusInternalServerError},
+	}
 
-	mw := multipart.NewWriter(body)
+	for _, tc := range tcs {
+		body := new(bytes.Buffer)
+		mw := multipart.NewWriter(body)
 
-	file, err := os.Open("./testedata/testimg.jpg")
-	assert.NoError(ts.T(), err)
+		// START UPLOAD
+		if tc.WithUpload {
+			file, err := os.Open(fmt.Sprintf("./testdata/%s", tc.File.Name))
+			assert.NoError(ts.T(), err)
 
-	w, err := mw.CreateFormFile("file", "testimg.jpg")
-	assert.NoError(ts.T(), err)
+			w, err := mw.CreateFormFile("file", tc.File.Name)
+			assert.NoError(ts.T(), err)
 
-	_, err = io.Copy(w, file)
-	assert.NoError(ts.T(), err)
+			_, err = io.Copy(w, file)
+			assert.NoError(ts.T(), err)
+		}
 
-	mw.Close()
+		if tc.MockFolderID != "" {
+			w, err := mw.CreateFormField("folder_id")
+			assert.NoError(ts.T(), err)
 
-	rr := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Add("Content-Type", mw.FormDataContentType())
+			w.Write([]byte(tc.MockFolderID))
+		}
 
-	setMockInsert(ts.mock, ts.entity)
+		mw.Close()
+		// END UPLOAD
 
-	ts.handler.Create(rr, req)
-	assert.Equal(ts.T(), http.StatusCreated, rr.Code)
+		rr := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPost, "/", body)
+		req.Header.Add("Content-Type", mw.FormDataContentType())
+
+		if tc.WithMock {
+			setMockInsert(ts.mock, tc.File, tc.FolderID)
+		}
+
+		ts.handler.Create(rr, req)
+		assert.Equal(ts.T(), tc.ExpectStatusCode, rr.Code)
+	}
 }
 
 func (ts *TransactionSuite) TestInsert() {
-	setMockInsert(ts.mock, ts.entity)
+	setMockInsert(ts.mock, ts.entity, 0)
 
 	_, err := Insert(ts.conn, ts.entity)
 	assert.NoError(ts.T(), err)
 }
 
-func setMockInsert(mock sqlmock.Sqlmock, entity *File) {
-	mock.ExpectExec(regexp.QuoteMeta(`insert into "files" ("folder_id", "owner_id", "name", "type", "path", "modified_at") values ($1, $2, $3, $4, $5, $6)`)).
-		WithArgs(0, 1, "testimg.jpg", "application/octet-stream", "/testimg.jpg", AnyTime{}).
+func setMockInsert(mock sqlmock.Sqlmock, entity *File, folderID int64) {
+	mock.ExpectExec(regexp.QuoteMeta(`insert into "files" ("folder_id", "owner_id", "name", "type", "path", "modified_at") VALUES ($1, $2, $3, $4, $5, $6)`)).
+		WithArgs(folderID, entity.OwnerID, entity.Name, entity.Type, entity.Path, AnyTime{}).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 }

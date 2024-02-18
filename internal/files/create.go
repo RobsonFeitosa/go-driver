@@ -22,11 +22,13 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 
 	path := fmt.Sprintf("/%s", fileHeader.Filename)
 
+	fmt.Println("entrousaafa1")
 	err = h.bucket.Upload(file, path)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	fmt.Println("entrousaafa2")
 
 	userID := r.Context().Value("user_id").(int64)
 
@@ -62,15 +64,13 @@ func (h *handler) Create(rw http.ResponseWriter, r *http.Request) {
 		Path:     path,
 		ID:       int(id),
 	}
+
 	msg, err := dto.Marshal()
-	fmt.Println("entrou11", msg)
 	if err != nil {
 		// TODO: rollback
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("entrou2", msg)
 
 	err = h.queue.Publish(msg)
 	if err != nil {

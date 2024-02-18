@@ -3,7 +3,6 @@ package files
 import (
 	"database/sql"
 	"database/sql/driver"
-	"regexp"
 	"testing"
 	"time"
 
@@ -46,12 +45,10 @@ func (ts *TransactionSuite) SetupTest() {
 
 	ts.entity = &File{
 		OwnerID: 1,
-		Name:    "testimg.jpg",
+		Name:    "testeimg.jpg",
 		Type:    "application/octet-stream",
-		Path:    "/testimg.jpg",
+		Path:    "/testeimg.jpg",
 	}
-
-	assert.NoError(ts.T(), err)
 }
 
 func (ts *TransactionSuite) AfterTest(_, _ string) {
@@ -60,13 +57,4 @@ func (ts *TransactionSuite) AfterTest(_, _ string) {
 
 func TestSuite(t *testing.T) {
 	suite.Run(t, new(TransactionSuite))
-}
-
-func setMockListFiles(mock sqlmock.Sqlmock) {
-	rows := sqlmock.NewRows([]string{"id", "folder_id", "owner_id", "name", "type", "path", "created_at", "modified_at", "deleted"}).
-		AddRow(1, 1, 1, "robson", "jpg", "/src", time.Now(), time.Now(), false)
-
-	mock.ExpectQuery(regexp.QuoteMeta(`select * from "files" where id = $1`)).
-		WithArgs(1).
-		WillReturnRows(rows)
 }
