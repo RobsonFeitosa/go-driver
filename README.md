@@ -1,7 +1,7 @@
 # Go Driver
 
 <p align="center" margin-top="25px" >
-  <img alt="GitHub Language Count" src=".github/soft.png" />
+  <img alt="GitHub Language Count" src=".github/soft.jpg" />
 </p>
 
 
