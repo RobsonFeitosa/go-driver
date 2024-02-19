@@ -32,3 +32,15 @@ $ go run cmd/api/main.go
 # Executando worker
 $ go run cmd/api/worker.go
 ``` 
+
+## Comandos úties
+```bash
+# Criar usuário
+$ go run cmd/cli/main.go users create --name nome --login nome@exemplo.com --pass 1234567 
+
+# Autenticação
+$ go run cmd/cli/main.go auth create --user nome@exemplo.com --pass 1234567
+
+# Upload de imagem
+$ go run cmd/cli/main.go files upload --filename ./internal/files/testdata/testeimg.jpg
+``` 
