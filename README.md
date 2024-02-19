@@ -6,8 +6,8 @@ Este é um aplicativo de armazenamento simples desenvolvido em Go. Ele oferece u
 
 ## Arquitetura de software
 <p align="center" margin-top="25px" >
-  <img alt="GitHub Language Count" src=".github/soft.jpg" />
-</p>
+  <img alt="GitHub design software" src=".github/soft.jpg" />
+</p> 
 
 ## Funcionalidades Principais
 - **Suporte Multiplataforma:** Compatível com diversos provedores de armazenamento em nuvem.
