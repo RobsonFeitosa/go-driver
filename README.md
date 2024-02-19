@@ -6,7 +6,7 @@ Este é um aplicativo de armazenamento simples desenvolvido em Go. Ele oferece u
 
 ## Arquitetura de software
 <p align="center" margin-top="25px" >
-  <img alt="GitHub design software" src=".github/soft.jpg" />
+  <img alt="GitHub design software" src=".github/software.jpg" />
 </p> 
 
 ## Funcionalidades Principais
