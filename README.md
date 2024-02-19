@@ -33,7 +33,7 @@ $ go run cmd/api/main.go
 $ go run cmd/api/worker.go
 ``` 
 
-## Comandos úties
+## Comandos úteis
 ```bash
 # Criar usuário
 $ go run cmd/cli/main.go users create --name nome --login nome@exemplo.com --pass 1234567 
